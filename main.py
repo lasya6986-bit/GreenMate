@@ -1,4 +1,18 @@
+from datetime import datetime
 import sqlite3
+def valid_date(date):
+    try:
+        datetime.strptime(date,"%d-%m-%Y")
+        return True
+    except:
+        return False
+def needs_watering(date):
+    last_watered=datetime.strptime(date,"%d-%m-%Y")
+    today=datetime.now()
+    days=(today-last_watered).days
+    if(days>3):
+        return True
+    return False 
 conn=sqlite3.connect("greenmate.db")
 cursor=conn.cursor()
 while(True):
@@ -9,11 +23,16 @@ while(True):
     print("4. Delete plant")
     print("5. Search Plant")
     print("6. View Watering History")
-    print("7. Exit")
+    print("7. Plant Statistics")
+    print("8. Exit")
     choice=int(input("Enter your choice :"))
     if(choice==1):
         plant=input("Enter plant name : ")
-        watered=input("Enter last watered date :")
+        while True:
+            watered=input("Enter last watered date :")
+            if(valid_date(watered)):
+                break
+            print("Invalid Date ! Use DD-MM-YYYY")
         sunlight=input("Enter sunlight requirement: ")
         cursor.execute("""
                        insert into plants (plant_name,last_watered,sunlight) values (?,?,?)""",(plant,watered,sunlight))
@@ -38,6 +57,8 @@ while(True):
                 print(f"Plant Name : {row[1]}")
                 print(f"Last watered : {row[2]}")
                 print(f"Sunlight : {row[3]}")
+                if(needs_watering(row[2])):
+                    print("⚠ Needs Watering")
                 print("------------")    
     elif choice==3:
 
@@ -47,7 +68,11 @@ while(True):
         
         plant=cursor.fetchone()
         if(plant is not None):
-            new_date=input("Enter new watered date : ")
+            while True:
+                new_date=input("Enter new watered date : ")
+                if(valid_date(new_date)):
+                    break
+                print("Invalid Format ! Use DD-MM-YYYY")
             cursor.execute("""
                        update plants set last_watered=? where id=?
                        """,(new_date,plant_id))
@@ -105,8 +130,28 @@ while(True):
                 
                 print("------------")  
 
-    
     elif choice==7:
+        cursor.execute("""
+                                   select count(*) from plants """)
+        plant_count=cursor.fetchone()
+        cursor.execute("""
+                       select count(*) from watering_history""")
+        
+        records=cursor.fetchone()
+        count=0
+        cursor.execute("""
+                       select * from plants """)
+        rows=cursor.fetchall()
+        if(rows is not  None):
+            for row in rows:
+                if(needs_watering(row[2])):
+                    count+=1
+        print("----- PLANT STATISTICS ------")
+        print("Total Plants - ",plant_count[0] if(plant_count) else 0)
+        print("Total Watering Records - ",records[0] if(records) else 0)
+        print("Plants Need Watering - ",count)
+        print("-----------------------------")
+    elif choice==8:
         print("Thank you for using GreenMate!")
         break
     else:
