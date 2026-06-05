@@ -11,5 +11,14 @@ cursor.execute("""
                plant_id INTEGER, watering_date TEXT,FOREIGN KEY(plant_id) references plants(id))""")
 conn.commit()
 
+cursor.execute("""
+               Alter table plants add column plant_type text""")
+conn.commit()
+
+cursor.execute("""
+               Alter table plants add column watering_frequency_days INTEGER """)
+
+conn.commit()
+
 print("DataBase and table created successfully!")
 conn.close()
